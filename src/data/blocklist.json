@@ -1,0 +1,44 @@
+{
+  "domains": [
+    "grabify.link",
+    "iplogger.org",
+    "iplogger.com",
+    "2no.co",
+    "yip.su",
+    "blasze.com",
+    "whatsapp-gift.com",
+    "whatsapp-gifts.com",
+    "whatsapp-verify.com",
+    "whatsapp-web-login.com",
+    "free-nitro.net",
+    "discord-nitro.info",
+    "steamcommuntiy.com",
+    "steamcommuntiy.net",
+    "paypa1.com",
+    "faceb00k.com",
+    "verify-account-support.com"
+  ],
+  "shorteners": [
+    "bit.ly",
+    "tinyurl.com",
+    "t.co",
+    "cutt.ly",
+    "is.gd",
+    "shorte.st",
+    "adf.ly",
+    "rebrand.ly",
+    "shorturl.at",
+    "goo.gl",
+    "ow.ly"
+  ],
+  "suspiciousKeywords": [
+    "verify-account",
+    "free-gift",
+    "claim-prize",
+    "login-secure",
+    "account-suspended",
+    "whatsapp-verify",
+    "get-free",
+    "airdrop-claim"
+  ]
+}

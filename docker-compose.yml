@@ -1,0 +1,15 @@
+services:
+  whatsapp-bot:
+    build: .
+    container_name: whatsapp-bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - wa-session:/app/.wwebjs_auth
+      - wa-data:/app/data
+    # QR code for first-time login is printed to logs: docker compose logs -f
+
+volumes:
+  wa-session:
+  wa-data:

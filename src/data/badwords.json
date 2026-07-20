@@ -1,0 +1,14 @@
+{
+  "_comment": "Starter list of words the bot treats as 'improper' and removes. Edit freely to match your group's rules.",
+  "words": [
+    "fuck",
+    "shit",
+    "bitch",
+    "asshole",
+    "bastard",
+    "dick",
+    "cunt",
+    "whore",
+    "slut"
+  ]
+}
