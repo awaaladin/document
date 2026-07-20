@@ -15,5 +15,7 @@ module.exports = {
   filterDefault: parseBool(process.env.FILTER_DEFAULT, true),
   maxWarnings: parseInt(process.env.MAX_WARNINGS, 10) || 3,
   safeBrowsingApiKey: process.env.GOOGLE_SAFE_BROWSING_API_KEY || '',
-  sessionPath: process.env.SESSION_PATH || '.wwebjs_auth',
+  sessionPath: process.env.SESSION_PATH || '.wa_auth',
+  engine: (process.env.ENGINE || 'webjs').toLowerCase(),
+  pairingPhoneNumber: process.env.PAIRING_PHONE_NUMBER || '',
 };

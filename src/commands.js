@@ -18,7 +18,7 @@ ${config.prefix}filter on|off - toggle bad-language filtering`;
 
 const GREETINGS = ['hi', 'hello', 'hey', 'hi there', 'yo'];
 
-async function isSenderAdmin(chat, senderId) {
+function isSenderAdmin(chat, senderId) {
   if (config.botAdmins.includes(senderId)) return true;
   if (!chat.isGroup) return false;
   return isGroupAdmin(chat, senderId);
@@ -29,26 +29,21 @@ async function requireGroupAndAdmin(chat, senderId, message) {
     await message.reply('That command only works inside a group.');
     return false;
   }
-  if (!(await isSenderAdmin(chat, senderId))) {
+  if (!isSenderAdmin(chat, senderId)) {
     await message.reply('Only group admins can use that command.');
     return false;
   }
   return true;
 }
 
-async function resolveTargetId(message) {
-  const mentions = await message.getMentions();
-  return mentions.length > 0 ? mentions[0].id._serialized : null;
-}
-
-async function handleCommand(client, message) {
+async function handleCommand(engine, chat, message) {
   const body = (message.body || '').trim();
   if (!body.startsWith(config.prefix)) return false;
 
   const [rawCmd, ...args] = body.slice(config.prefix.length).trim().split(/\s+/);
   const cmd = rawCmd.toLowerCase();
-  const chat = await message.getChat();
-  const senderId = message.author || message.from;
+  const senderId = message.senderId;
+  const targetId = message.mentionedIds[0];
 
   switch (cmd) {
     case 'help':
@@ -57,9 +52,9 @@ async function handleCommand(client, message) {
 
     case 'ping': {
       const start = Date.now();
-      const sent = await message.reply('Pong!');
+      await message.reply('Pong!');
       logger.info(`Replied to ping in ${Date.now() - start}ms`);
-      return Boolean(sent);
+      return true;
     }
 
     case 'rules':
@@ -73,39 +68,36 @@ async function handleCommand(client, message) {
         await message.reply('That command only works inside a group.');
         return true;
       }
-      const targetId = (await resolveTargetId(message)) || senderId;
-      const count = store.getWarnings(chat.id._serialized, targetId, config);
+      const id = targetId || senderId;
+      const count = store.getWarnings(chat.id, id, config);
       await message.reply(`That user has ${count}/${config.maxWarnings} warnings.`);
       return true;
     }
 
     case 'warn': {
       if (!(await requireGroupAndAdmin(chat, senderId, message))) return true;
-      const targetId = await resolveTargetId(message);
       if (!targetId) {
         await message.reply(`Mention a user to warn, e.g. ${config.prefix}warn @user`);
         return true;
       }
-      const count = store.addWarning(chat.id._serialized, targetId, config);
+      const count = store.addWarning(chat.id, targetId, config);
       await message.reply(`Warned. That user now has ${count}/${config.maxWarnings} warnings.`);
       return true;
     }
 
     case 'resetwarnings': {
       if (!(await requireGroupAndAdmin(chat, senderId, message))) return true;
-      const targetId = await resolveTargetId(message);
       if (!targetId) {
         await message.reply(`Mention a user, e.g. ${config.prefix}resetwarnings @user`);
         return true;
       }
-      store.resetWarnings(chat.id._serialized, targetId, config);
+      store.resetWarnings(chat.id, targetId, config);
       await message.reply('Warnings cleared for that user.');
       return true;
     }
 
     case 'kick': {
       if (!(await requireGroupAndAdmin(chat, senderId, message))) return true;
-      const targetId = await resolveTargetId(message);
       if (!targetId) {
         await message.reply(`Mention a user to kick, e.g. ${config.prefix}kick @user`);
         return true;
@@ -128,7 +120,7 @@ async function handleCommand(client, message) {
         await message.reply(`Usage: ${config.prefix}${cmd} on|off`);
         return true;
       }
-      store.setGroupSetting(chat.id._serialized, cmd === 'antilink' ? 'antilink' : 'filter', setting === 'on', config);
+      store.setGroupSetting(chat.id, cmd === 'antilink' ? 'antilink' : 'filter', setting === 'on', config);
       await message.reply(`${cmd === 'antilink' ? 'Malicious-link filter' : 'Bad-language filter'} turned ${setting}.`);
       return true;
     }

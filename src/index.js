@@ -1,50 +1,50 @@
-const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const config = require('./config');
 const logger = require('./logger');
 const moderation = require('./moderation/moderation');
 const commands = require('./commands');
+const { createEngine } = require('./engines');
 
-const client = new Client({
-  authStrategy: new LocalAuth({ dataPath: config.sessionPath }),
-  puppeteer: {
-    headless: true,
-    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
-  },
-});
+const engine = createEngine();
 
-client.on('qr', (qr) => {
+engine.on('qr', (qr) => {
   logger.info('Scan this QR code with WhatsApp (Linked Devices):');
   qrcode.generate(qr, { small: true });
 });
 
-client.on('ready', () => {
-  logger.info(`WhatsApp bot ready as ${client.info.wid.user}`);
+engine.on('pairing_code', (code) => {
+  logger.info(`Pairing code: ${code}`);
+  logger.info(
+    'In WhatsApp: Settings > Linked Devices > Link a Device > "Link with phone number instead", then enter this code.',
+  );
 });
 
-client.on('disconnected', (reason) => {
+engine.on('ready', () => {
+  logger.info(`WhatsApp bot ready (${config.engine} engine) as ${engine.getSelfId()}`);
+});
+
+engine.on('disconnected', (reason) => {
   logger.warn('Client disconnected:', reason);
 });
 
-client.on('auth_failure', (msg) => {
+engine.on('auth_failure', (msg) => {
   logger.error('Authentication failure:', msg);
 });
 
-client.on('group_join', (notification) => {
-  moderation.welcomeNewMembers(client, notification).catch((err) => {
+engine.on('group_join', (chatId, participantIds) => {
+  moderation.welcomeNewMembers(engine, chatId, participantIds).catch((err) => {
     logger.error('welcomeNewMembers error:', err.message);
   });
 });
 
-client.on('message', async (message) => {
+engine.on('message', async (message) => {
   try {
-    if (message.isStatus) return;
+    const chat = await engine.getChat(message.chatId);
 
-    const moderated = await moderation.handleGroupMessage(client, message);
+    const moderated = await moderation.handleGroupMessage(engine, chat, message);
     if (moderated) return;
 
-    const handledCommand = await commands.handleCommand(client, message);
+    const handledCommand = await commands.handleCommand(engine, chat, message);
     if (handledCommand) return;
 
     await commands.handleAutoReply(message);
@@ -53,10 +53,13 @@ client.on('message', async (message) => {
   }
 });
 
-client.initialize();
+engine.start().catch((err) => {
+  logger.error('Failed to start engine:', err);
+  process.exit(1);
+});
 
 process.on('SIGINT', async () => {
   logger.info('Shutting down...');
-  await client.destroy();
+  await engine.stop();
   process.exit(0);
 });
